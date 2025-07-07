@@ -1,0 +1,2 @@
+# the path of the model / checkpoint to be used
+fp: '/root/KG/DeepKE/example/re/standard/checkpoints/2025-07-06_00-44-01/lm_epoch50.pth'
