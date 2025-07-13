@@ -3,6 +3,7 @@
 # but if you try to read it before it's set an error will get thrown.
 
 # populated at runtime
+# @package _global_
 cwd: ???
 use_wandb: False
 

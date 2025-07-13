@@ -16,6 +16,11 @@ from hydra import utils
 from deepke.name_entity_re.standard import *
 
 import wandb
+#处理警告信息
+import warnings
+warnings.filterwarnings("ignore")
+from transformers import logging
+logging.set_verbosity_error()
 
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',

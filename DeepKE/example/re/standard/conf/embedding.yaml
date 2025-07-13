@@ -1,3 +1,4 @@
+# @package _global_
 # populated at runtime
 vocab_size: ???
 word_dim: 60

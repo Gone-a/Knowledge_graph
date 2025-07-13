@@ -1,3 +1,4 @@
+# @package _global_
 seed: 1
 
 use_gpu: True
