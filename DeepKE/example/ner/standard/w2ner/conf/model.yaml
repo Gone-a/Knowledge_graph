@@ -1,3 +1,4 @@
+# @package _global_
 bert_name: "bert-base-chinese"
 do_lower_case: True
 

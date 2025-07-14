@@ -7,6 +7,12 @@ from hydra import utils
 import pickle
 import torch
 
+#处理警告信息
+import warnings
+warnings.filterwarnings("ignore")
+from transformers import logging as transformers_logging
+transformers_logging.set_verbosity_error()
+
 def trans_Dataset(config, examples: List[InputExample]):
     D = []
     for example in examples:

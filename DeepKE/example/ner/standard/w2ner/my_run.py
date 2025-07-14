@@ -1,3 +1,4 @@
+#新增wandb,但是网络连接超时
 import argparse
 import json
 import numpy as np
@@ -9,12 +10,14 @@ import transformers
 from sklearn.metrics import precision_recall_fscore_support, f1_score, classification_report
 from torch.utils.data import DataLoader
 
+import wandb
+
 import hydra
 from deepke.name_entity_re.standard.w2ner import *
 from deepke.name_entity_re.standard.w2ner.utils import *
 from deepke.name_entity_re.standard.tools import *
 
-#处理警告信息
+# 处理警告信息
 import warnings
 warnings.filterwarnings("ignore")
 from transformers import logging as transformers_logging
@@ -29,7 +32,6 @@ logger = logging.getLogger(__name__)
 class Trainer(object):
     def __init__(self, config, model):
         self.model = model
-        #{'<pad>': 0, '<suc>': 1, 'con': 2, 'ari': 3, 'ext': 4}
         class_weights = torch.tensor([1.0, 1.0, 6.3816, 27.6352, 102.2063], dtype=torch.float).cuda()
         self.criterion = nn.CrossEntropyLoss(weight=class_weights)
 
@@ -59,23 +61,33 @@ class Trainer(object):
         pred_result = []
         label_result = []
 
+        tr_loss = 0.0  # 初始化总损失
+        nb_tr_steps = 0  # 初始化训练步数
+
+        gradient_accumulation_steps = getattr(config, 'gradient_accumulation_steps', 1)
+        self.optimizer.zero_grad()
+
         for i, data_batch in tqdm(enumerate(data_loader), desc='Training'):
             data_batch = [data.cuda() for data in data_batch[:-1]]
-
             bert_inputs, grid_labels, grid_mask2d, pieces2word, dist_inputs, sent_length = data_batch
 
             outputs = self.model(bert_inputs, grid_mask2d, dist_inputs, pieces2word, sent_length)
-
             grid_mask2d = grid_mask2d.clone()
             loss = self.criterion(outputs[grid_mask2d], grid_labels[grid_mask2d])
-
+            loss = loss / gradient_accumulation_steps  # 梯度累积，loss缩放
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), config.clip_grad_norm)
-            self.optimizer.step()
-            self.optimizer.zero_grad()
 
-            loss_list.append(loss.cpu().item())
-            print(f"[Train] Epoch {epoch} Step {i} 当前batch损失: {loss.item()}")
+            if (i + 1) % gradient_accumulation_steps == 0 or (i + 1) == len(data_loader):
+                self.optimizer.step()
+                self.optimizer.zero_grad()
+                self.scheduler.step()
+
+            loss_list.append(loss.cpu().item() * gradient_accumulation_steps)  # 还原原始loss
+            print(f"[Train] Epoch {epoch} Step {i} 当前batch损失: {loss.item() * gradient_accumulation_steps}")
+
+            tr_loss += loss.item() * gradient_accumulation_steps  # 更新总损失
+            nb_tr_steps += 1  # 更新训练步数
 
             outputs = torch.argmax(outputs, -1)
             grid_labels = grid_labels[grid_mask2d].contiguous().view(-1)
@@ -84,7 +96,10 @@ class Trainer(object):
             label_result.append(grid_labels.cpu())
             pred_result.append(outputs.cpu())
 
-            self.scheduler.step()
+            if config.use_wandb:
+                wandb.log({
+                    "train_loss": tr_loss / nb_tr_steps
+                })
 
         label_result = torch.cat(label_result)
         pred_result = torch.cat(pred_result)
@@ -234,6 +249,8 @@ class Trainer(object):
 
 @hydra.main(config_path="conf", config_name='config')
 def main(cfg):
+    if cfg.use_wandb:
+        wandb.init(project="deepkeKG")
     config = type('Config', (), {})()
     for key in cfg.keys():
         config.__setattr__(key, cfg.get(key))

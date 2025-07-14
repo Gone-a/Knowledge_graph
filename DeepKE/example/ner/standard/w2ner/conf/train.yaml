@@ -1,13 +1,15 @@
-data_dir: "data/people's daily"
+data_dir: "data"
 save_path: "output"
-device: 2 # cuda
+device: 0 # cuda
 
-do_train: False
+do_train: True
 do_eval: True
 do_predict: True
 
 epochs: 15           # the number of training epochs
-batch_size: 8
+batch_size: 6          # 减小单步显存压力 8->6
+gradient_accumulation_steps: 2  # 新增（保持等效batch=12）
+
 
 warm_factor: 0.1  # warmup rate
 weight_decay: 0.1

@@ -1,4 +1,3 @@
-# @package _global_
 adam_epsilon: 1e-8
 data_dir: "data"
 do_eval: True
@@ -8,7 +7,7 @@ eval_on: "dev"
 gpu_id: 0
 gradient_accumulation_steps: 1
 learning_rate: 1e-3            # tips：set 2e-5 for BERT with recommended datasets
-num_train_epochs: 3            # the number of training epochs
+num_train_epochs: 10          # the number of training epochs
 output_dir: "checkpoints"
 seed: 42
 train_batch_size: 64
@@ -21,7 +20,7 @@ lr_step : 5
 lr_gamma : 0.8
 beta1: 0.9
 beta2: 0.999
-labels: ['LOC','ORG','PER']
+labels: ['CON','ARI','EXT']
 # labels: ['YAS','TOJ', 'NGS', 'QCV', 'OKB', 'BQF', 'CAR', 'ZFM', 'EMT', 'UER', 'QEE', 'UFT', 'GJS', 'SVA', 'ANO', 'KEJ', 'ZDI', 'CAT', 'GCK', 'FQK', 'BAK', 'RET', 'QZP', 'QAQ', 'ZRE', 'TDZ', 'CVC', 'PMN']
 
 use_multi_gpu: False

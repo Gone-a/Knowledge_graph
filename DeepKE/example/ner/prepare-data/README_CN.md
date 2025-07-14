@@ -74,3 +74,8 @@ python prepare_weaksupervised_data.py --language cn --dict_dir vocab_dict_cn.csv
 ```bash
 python prepare_weaksupervised_data.py --language en --dict_dir vocab_dict_en.csv
 ```
+
+
+数据文件放入source_data目录下
+词典命名为vocab_dict.csv
+使用my_开头的脚本可以跳过字典中的空行和注释行

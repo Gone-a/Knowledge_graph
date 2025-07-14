@@ -19,8 +19,8 @@ import wandb
 #处理警告信息
 import warnings
 warnings.filterwarnings("ignore")
-from transformers import logging
-logging.set_verbosity_error()
+from transformers import logging as transformers_logging
+transformers_logging.set_verbosity_error()
 
 
 logging.basicConfig(format = '%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -54,7 +54,9 @@ class TrainNer(BertForTokenClassification):
         logits = self.classifier(sequence_output)
 
         if labels is not None:
-            loss_fct = nn.CrossEntropyLoss(ignore_index=0)
+            # 权重顺序需与label_list一致，0号通常为pad或O
+            class_weights = torch.tensor([1.0, 6.3816, 6.3816, 27.6352, 27.6352, 102.2063, 102.2063, 1.0, 1.0, 1.0], dtype=torch.float).to(logits.device)
+            loss_fct = nn.CrossEntropyLoss(weight=class_weights, ignore_index=0)
             if attention_mask_label is not None:
                 active_loss = attention_mask_label.view(-1) == 1
                 active_logits = logits.view(-1, self.num_labels)[active_loss]
@@ -109,6 +111,7 @@ def main(cfg):
     processor = NerProcessor()
     label_list = processor.get_labels(cfg)
     num_labels = len(label_list) + 1
+    print("label_list:", label_list)
     
     # Prepare the model
     tokenizer = BertTokenizer.from_pretrained(cfg.bert_model, do_lower_case=cfg.do_lower_case)

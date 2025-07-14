@@ -1,3 +1,4 @@
+#新增跳过空行和注释行的处理
 # -*- coding: utf-8 -*-
 import os
 import random
@@ -15,15 +16,6 @@ def add_entity(dict_dir):
     
     dics = csv.reader(open(os.path.join(os.getcwd(), dict_dir),'r',encoding='utf8'))
     
-    """
-    for row in dics:
-      
-        if len(row)==2:
-            jieba.add_word(row[0].strip(),tag=row[1].strip())
-            
-            #保证由多个词组成的实体词，不被切分开 
-            jieba.suggest_freq(row[0].strip())
-    """
     for row in dics:
         # 处理前先去除每个字段的前后空格
         processed_row = [field.strip() for field in row]
@@ -77,7 +69,6 @@ def auto_label(input_texts, data_type, end_words=['。','.','?','？','!','！']
 
 if __name__ == '__main__':
     
-    
     parser = argparse.ArgumentParser(description='prepare_weak_supervised_data')
     parser.add_argument('--language', type=str, default='cn')
     parser.add_argument('--source_dir', type=str, default='source_data')
@@ -97,7 +88,24 @@ if __name__ == '__main__':
     test_rate = args.test_rate
     
     dics = csv.reader(open(os.path.join(os.getcwd(), dict_dir),'r',encoding='utf8'))
-    label_set = set([raw[1] for raw in dics])
+    label_set = set()
+    
+    for raw in dics:
+        # 处理前先去除每个字段的前后空格
+        processed_row = [field.strip() for field in raw]
+        
+        # 跳过空行（所有字段均为空）
+        if not any(processed_row):
+            continue
+            
+        # 跳过注释行（假设注释以#开头）
+        if processed_row[0].startswith('#'):
+            continue
+            
+        # 处理有效行（长度为2且字段非空）
+        if len(processed_row) == 2 and processed_row[0] and processed_row[1]:
+            label_set.add(processed_row[1])
+    
     end_words = set(['。','.','?','？','!','！'])
     add_entity(dict_dir)
 
